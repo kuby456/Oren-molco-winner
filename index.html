@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>ווינר סימולציה נוחה</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: white;
+  padding: 20px;
+  margin: 0;
+}
+
+h2 {
+  margin-bottom: 20px;
+}
+
+.card {
+  background: #1f2937;
+  padding: 20px;
+  border-radius: 15px;
+  margin-bottom: 20px;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 18px 0;
+  padding: 14px;
+  background: #111827;
+  border-radius: 12px;
+}
+
+.topRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.labelBox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.odds {
+  color: gold;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.betInputWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.betInputWrap input {
+  width: 120px;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  font-size: 16px;
+  background: #e5e7eb;
+  color: #111;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 8px 12px;
+  border: 1px solid #374151;
+  border-radius: 999px;
+  background: #0f172a;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 14px;
+}
+
+.chip:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.chip.active {
+  background: #22c55e;
+  color: #08130b;
+  font-weight: bold;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34,197,94,0.25);
+}
+
+.chip.autoActive {
+  background: #facc15 !important;
+  color: #111 !important;
+  border-color: #facc15 !important;
+  box-shadow: 0 0 0 2px rgba(250,204,21,0.35);
+  font-weight: bold;
+}
+
+.mainBtn {
+  padding: 9px 9px;
+  border: none;
+  border-radius: 12px;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+  font-size: 4px;
+  font-weight: bold;
+  margin: 4px;
+}
+
+.mainBtn:hover {
+  background: #1d4ed8;
+}
+
+.pauseBtn {
+  background: #f59e0b;
+}
+.pauseBtn:hover {
+  background: #d97706;
+}
+
+.stopBtn {
+  background: #ef4444;
+}
+.stopBtn:hover {
+  background: #dc2626;
+}
+
+.result {
+  margin-top: 15px;
+  padding: 12px;
+  background: #0f172a;
+  border-radius: 10px;
+  line-height: 1.8;
+}
+
+.green { color: #22c55e; }
+.red { color: #ef4444; }
+.yellow { color: #facc15; }
+
+.summaryLine {
+  margin: 10px 0;
+  font-size: 18px;
+}
+
+.btnWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.smallNote {
+  margin-top: 8px;
+  color: #cbd5e1;
+  font-size: 14px;
+}
+</style>
+</head>
+
+<body>
+  
+  
+<div id="mainScreen">
+
+  <h2>סימולציית ווינר</h2>
+
+  <div class="card">
+    <div class="summaryLine">מספר הגרלות כולל: <span id="totalGames">0</span></div>
+    <div class="summaryLine">סה"כ הימורים: <span id="totalBet">0</span></div>
+    <div class="summaryLine">סבבים מלאים שהפסדת: <span id="fullLoss">0</span></div>
+    <div class="summaryLine">סה"כ החזר: <span id="totalReturn">0</span></div>
+    <div class="summaryLine">רווח/הפסד: <span id="profit">0</span></div>
+    <div class="summaryLine">פיק עליון רווח: <span id="peakProfit" class="green">0</span></div>
+    <div class="summaryLine">פיק תחתון הפסד: <span id="peakLoss" class="red">0</span></div>
+    <div class="summaryLine">מצב אוטומט: <span id="autoModeText" class="yellow">כבוי</span></div>
+    <div class="summaryLine">שלב אוטומט נוכחי: <span id="autoStage">-</span></div>
+    <div class="summaryLine">סכום אוטומט נוכחי: <span id="autoAmount">-</span></div>
+  </div>
+
+  <div class="card">
+    <div class="result" id="lastResult">עוד לא שיחקת</div>
+
+    <button class="mainBtn" onclick="play()" style="padding:20px 20px;">שחק</button>
+
+    <div class="btnWrap">
+      <button class="mainBtn" onclick="startAutoResetOnWin()">אוטומט: עד זכייה ואז איפוס</button>
+      <button class="mainBtn" onclick="startAutoCycle()">אוטומט: סבבים קבועים</button>
+      <button class="mainBtn pauseBtn" onclick="togglePause()">פאוז / המשך</button>
+      <button class="mainBtn stopBtn" onclick="stopAuto()">עצור אוטומט</button>
+    </div>
+
+    <!-- 🔥 כפתורי מהירות -->
+    <div class="btnWrap">
+      <button class="mainBtn" onclick="setSpeed('slow')">איטי</button>
+      <button class="mainBtn" onclick="setSpeed('normal')">רגיל</button>
+      <button class="mainBtn" onclick="setSpeed('fast')">מהיר</button>
+    </div>
+
+    <!-- 🔥 מעבר למסך הגדרות -->
+    <div class="btnWrap">
+      <button class="mainBtn" onclick="openSettings()">ערוך שלבים</button>
+    </div>
+
+    <div class="smallNote">
+      האוטומט מהמר רק על אופציה אחת
+    </div>
+
+    <div id="oddsBox"></div>
+  </div>
+
+</div>
+  <div id="settingsScreen" style="display:none; padding:20px;">
+
+  <h2>הגדרת שלבים</h2>
+
+  <div class="card">
+
+    <div id="stepsContainer"></div>
+
+    <div class="btnWrap">
+      <button class="mainBtn" onclick="addStep()">➕ הוסף שלב</button>
+    </div>
+
+    <div class="btnWrap">
+      <button class="mainBtn" onclick="applySteps()">שמור</button>
+      <button class="mainBtn" onclick="goBack()">חזרה</button>
+    </div>
+
+  </div>
+
+</div>
+<script>
+let odds = [];
+let probs = [];
+
+let totalBet = 0;
+let totalReturn = 0;
+let totalGames = 0;
+let peakProfit = 0;
+let peakLoss = 0;
+let fullLossRounds = 0;
+  
+let BET_VALUES = [
+1,
+2,
+4,
+8,
+15,
+29,
+55,
+103,
+192,
+353,
+646,
+1170,
+2106,
+3749,
+6623,
+11642,
+20374,
+35451,
+61331,
+105163,
+178777,
+302873,
+509029,
+850079,
+1402630,
+2292127,
+3713255,
+5961663,
+9474964,
+14999943
+];
+let autoTimer = null;
+let autoRunning = false;
+let autoPaused = false;
+let autoMode = "off"; // off | resetOnWin | cycle
+let autoStepIndex = 0;
+let speed = 100; // רגיל
+let selectedRow = 0; // 0=בית, 1=תיקו, 2=חוץ
+  
+  function generateGame() {
+  let p1 = Math.random() * 0.5 + 0.25;
+  let p2 = Math.random() * 0.3 + 0.15;
+  let p3 = Math.random() * 0.5 + 0.25;
+
+  let sum = p1 + p2 + p3;
+  p1 /= sum;
+  p2 /= sum;
+  p3 /= sum;
+
+  probs = [p1, p2, p3];
+  odds = probs.map(p => (0.9 / p));
+
+  render();
+  refreshAutoHighlight();
+}
+
+function render() {
+  const labels = ["בית", "תיקו", "חוץ"];
+  let html = "";
+
+  for (let i = 0; i < 3; i++) {
+    let chipsHtml = BET_VALUES.map(val => `
+      <button type="button" class="chip" data-row="${i}" data-value="${val}" onclick="selectBet(${i}, ${val}, this)">
+        ₪${val}
+      </button>
+    `).join("");
+
+    html += `
+      <div class="row">
+        <div class="topRow">
+          <div class="labelBox">
+            <span>${labels[i]}</span>
+          </div>
+          <div class="odds">יחס: ${odds[i].toFixed(2)}</div>
+        </div>
+
+        <div class="betInputWrap">
+  <label>סכום נבחר:</label>
+  <span id="bet${i}">₪0</span>
+</div>
+
+        <div class="chips" id="chips${i}">
+          ${chipsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  document.getElementById("oddsBox").innerHTML = html;
+}
+function openSettings() {
+  document.getElementById("mainScreen").style.display = "none";
+  document.getElementById("settingsScreen").style.display = "block";
+
+  renderStepsEditor();
+}
+
+function goBack() {
+  document.getElementById("mainScreen").style.display = "block";
+  document.getElementById("settingsScreen").style.display = "none";
+}
+
+
+
+  
+function selectBet(row, value, el) {
+  selectedRow = row;
+
+  // אפס תצוגה
+  for (let i = 0; i < 3; i++) {
+    document.getElementById("bet" + i).innerText = "₪0";
+
+    const chips = document.querySelectorAll(`#chips${i} .chip`);
+    chips.forEach(chip => chip.classList.remove("active"));
+  }
+
+  // עדכן תצוגה
+  document.getElementById("bet" + row).innerText = "₪" + value;
+
+  el.classList.add("active");
+  refreshAutoHighlight();
+}
+
+
+
+function weighted() {
+  let r = Math.random();
+  let s = 0;
+
+  for (let i = 0; i < 3; i++) {
+    s += probs[i];
+    if (r <= s) return i;
+  }
+
+  return 2;
+}
+
+function getManualBets() {
+  let bets = [0,0,0];
+
+  const selectedAmountText = document.getElementById("bet" + selectedRow).innerText;
+  const amount = Number(selectedAmountText.replace("₪", ""));
+
+  bets[selectedRow] = amount;
+
+  return bets;
+}
+
+function getSelectedAutoRow() {
+  return selectedRow;
+}
+
+function getAutoBetsByCurrentStep() {
+  const row = getSelectedAutoRow();
+  const amount = BET_VALUES[autoStepIndex];
+  let bets = [0, 0, 0];
+  bets[row] = amount;
+  return bets;
+}
+
+function updateSummary(profit) {
+  document.getElementById("totalGames").innerText = totalGames;
+  document.getElementById("totalBet").innerText = totalBet.toFixed(2);
+  document.getElementById("totalReturn").innerText = totalReturn.toFixed(2);
+
+  const profitEl = document.getElementById("profit");
+  profitEl.innerText = profit.toFixed(2);
+  profitEl.className = profit >= 0 ? "green" : "red";
+
+  document.getElementById("peakProfit").innerText = peakProfit.toFixed(2);
+  document.getElementById("peakLoss").innerText = peakLoss.toFixed(2);
+}
+  
+  function addStep() {
+  BET_VALUES.push(1);
+  renderStepsEditor();
+}
+function renderStepsEditor() {
+  const container = document.getElementById("stepsContainer");
+  container.innerHTML = "";
+
+  BET_VALUES.forEach((val, index) => {
+    const div = document.createElement("div");
+    div.style.display = "flex";
+    div.style.gap = "10px";
+    div.style.marginBottom = "10px";
+
+    div.innerHTML = `
+      <span style="width:40px;">${index + 1}</span>
+      <input type="number" value="${val}" style="flex:1;padding:8px;border-radius:8px;">
+      <button onclick="removeStep(${index})">❌</button>
+    `;
+
+    container.appendChild(div);
+  });
+}
+function play(customBets = null, source = "manual") {
+  const labels = ["בית", "תיקו", "חוץ"];
+  let bets = customBets || getManualBets();
+
+  let betSum = bets.reduce((a, b) => a + b, 0);
+
+  if (betSum === 0) {
+    alert("שים סכום לפחות על אופציה אחת");
+    return null;
+  }
+
+  let result = weighted();
+
+  let minOdds = Math.min(...odds);
+  let maxOdds = Math.max(...odds);
+
+  let type = "";
+  if (odds[result] === minOdds) type = "🟢 פייבוריט";
+  else if (odds[result] === maxOdds) type = "🔴 אנדרדוג";
+  else type = "⚖️ אמצעי";
+
+  let win = bets[result] * odds[result];
+
+  totalGames++;
+  totalBet += betSum;
+  totalReturn += win;
+
+  let profit = totalReturn - totalBet;
+
+  if (profit > peakProfit) peakProfit = profit;
+  if (profit < peakLoss) peakLoss = profit;
+
+  let playedOnIndex = bets.findIndex(v => v > 0);
+  let playedOnLabel = playedOnIndex >= 0 ? labels[playedOnIndex] : "לא ידוע";
+
+  document.getElementById("lastResult").innerHTML = `
+    מקור: <b>${source === "manual" ? "ידני" : "אוטומט"}</b><br>
+    תוצאה שיצאה: <b>${labels[result]}</b><br>
+    סוג תוצאה: <b>${type}</b><br>
+    הימור על: <b>${playedOnLabel}</b><br>
+    שמת על בית: ₪${bets[0].toFixed(2)}<br>
+    שמת על תיקו: ₪${bets[1].toFixed(2)}<br>
+    שמת על חוץ: ₪${bets[2].toFixed(2)}<br>
+    סה"כ שמת: ₪${betSum.toFixed(2)}<br>
+    החזר מהסיבוב: <span class="${win > 0 ? 'green' : 'red'}">₪${win.toFixed(2)}</span><br>
+    מאזן כולל: <span class="${profit >= 0 ? 'green' : 'red'}">₪${profit.toFixed(2)}</span>
+  `;
+
+  updateSummary(profit);
+  generateGame();
+
+  return {
+    result,
+    bets,
+    win,
+    profit,
+    hit: win > 0
+  };
+}
+  
+  function applySteps() {
+  const inputs = document.querySelectorAll("#stepsContainer input");
+
+  let newValues = [];
+
+  inputs.forEach(input => {
+    let val = Number(input.value);
+
+    if (!isNaN(val) && val > 0) {
+      newValues.push(Math.round(val));
+    }
+  });
+
+  // 🔴 הגנה - חייב לפחות שלב אחד
+  if (newValues.length === 0) {
+    alert("חייב לפחות שלב אחד");
+    return;
+  }
+
+  // 🔴 עצירת אוטומט לפני שינוי
+  stopAuto(false);
+
+  // 🔥 עדכון השלבים
+  BET_VALUES = newValues;
+
+  // 🔄 איפוס שלב נוכחי
+  autoStepIndex = 0;
+
+  // 🔄 רענון UI
+  render();
+  refreshAutoHighlight();
+
+  // 🔙 חזרה למסך הראשי
+  goBack();
+}
+function removeStep(index) {
+  BET_VALUES.splice(index, 1);
+  renderStepsEditor();
+}
+function refreshAutoHighlight() {
+  document.querySelectorAll(".chip").forEach(ch => ch.classList.remove("autoActive"));
+
+  if (!autoRunning && autoMode === "off") {
+    document.getElementById("autoStage").innerText = "-";
+    document.getElementById("autoAmount").innerText = "-";
+    return;
+  }
+
+  const row = getSelectedAutoRow();
+  const amount = BET_VALUES[autoStepIndex];
+
+  document.getElementById("autoStage").innerText = autoStepIndex + 1;
+  document.getElementById("autoAmount").innerText = "₪" + amount;
+
+  const target = document.querySelector(`#chips${row} .chip[data-value="${amount}"]`);
+  if (target) target.classList.add("autoActive");
+}
+
+function setAutoModeText() {
+  const el = document.getElementById("autoModeText");
+
+  if (autoMode === "off") {
+    el.innerText = "כבוי";
+    el.className = "yellow";
+  } else if (autoMode === "resetOnWin") {
+    el.innerText = autoPaused ? "פאוז - עד זכייה ואז איפוס" : "רץ - עד זכייה ואז איפוס";
+    el.className = autoPaused ? "yellow" : "green";
+  } else if (autoMode === "cycle") {
+    el.innerText = autoPaused ? "פאוז - סבבים קבועים" : "רץ - סבבים קבועים";
+    el.className = autoPaused ? "yellow" : "green";
+  }
+}
+function setSpeed(mode) {
+  if (mode === "slow") speed = 500;
+  if (mode === "normal") speed = 100;
+  if (mode === "fast") speed = 1;
+
+  if (autoRunning) {
+    clearInterval(autoTimer);
+    autoTimer = setInterval(autoTick, speed);
+  }
+}
+  
+function autoTick() {
+  if (!autoRunning || autoPaused) return;
+
+  const bets = getAutoBetsByCurrentStep();
+  const outcome = play(bets, "auto");
+
+  if (!outcome) return;
+
+ if (autoMode === "resetOnWin") {
+  if (outcome.hit) {
+    autoStepIndex = 0;
+  } else {
+    autoStepIndex++;
+
+    // 🔴 אם הגעת לסוף השלבים = סבב מלא הפסד
+    if (autoStepIndex >= BET_VALUES.length) {
+      fullLossRounds++;
+      document.getElementById("fullLoss").innerText = fullLossRounds;
+
+      autoStepIndex = 0;
+    }
+  }
+} else if (autoMode === "cycle") {
+    autoStepIndex++;
+    if (autoStepIndex >= BET_VALUES.length) {
+      autoStepIndex = 0;
+    }
+  }
+
+  refreshAutoHighlight();
+}
+
+function startAutoResetOnWin() {
+  stopAuto(false);
+  autoMode = "resetOnWin";
+  autoRunning = true;
+  autoPaused = false;
+  autoStepIndex = 0;
+  setAutoModeText();
+  refreshAutoHighlight();
+  autoTimer = setInterval(autoTick, speed);
+}
+
+function startAutoCycle() {
+  stopAuto(false);
+  autoMode = "cycle";
+  autoRunning = true;
+  autoPaused = false;
+  autoStepIndex = 0;
+  setAutoModeText();
+  refreshAutoHighlight();
+  autoTimer = setInterval(autoTick, speed);
+}
+
+function togglePause() {
+  if (!autoRunning) return;
+  autoPaused = !autoPaused;
+  setAutoModeText();
+}
+
+function stopAuto(resetMode = true) {
+  if (autoTimer) {
+    clearInterval(autoTimer);
+    autoTimer = null;
+  }
+
+  autoRunning = false;
+  autoPaused = false;
+
+  if (resetMode) {
+    autoMode = "off";
+    autoStepIndex = 0;
+  }
+
+  setAutoModeText();
+  refreshAutoHighlight();
+
+  if (resetMode) {
+    document.querySelectorAll(".chip").forEach(ch => ch.classList.remove("autoActive"));
+  }
+}
+  
+  
+
+generateGame();
+setAutoModeText();
+updateSummary(0);
+</script>
+
+</body>
+</html>
